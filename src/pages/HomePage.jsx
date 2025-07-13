@@ -70,8 +70,8 @@ export default function HomePage() {
             <div className="flex flex-wrap justify-center gap-8 pb-10 px-8">
               {featured.map((property) => (
                 <Link
-                  key={property.id}
-                  to={`/properties/${property.id}`}
+                  key={property._id}
+                  to={`/properties/${property._id}`}
                   className="w-[300px] bg-white overflow-hidden rounded-2xl shadow hover:shadow-xl transition hover:-translate-y-1"
                 >
                   <img
@@ -130,7 +130,7 @@ export default function HomePage() {
             const label = rest.join(" ");
             return (
               <div
-                key={label}
+                key={item}
                 className="bg-rose-50 p-6 rounded-xl hover:shadow-xl transition hover:-translate-y-1 flex flex-col items-center gap-2 border border-orange-200"
               >
                 <div className="text-4xl">{emoji}</div>

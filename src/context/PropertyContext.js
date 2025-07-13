@@ -24,18 +24,16 @@ export const PropertyProvider = ({ children }) => {
   const updateProperty = updated =>
     setProperties(prev => prev.map(p => (p.id === updated.id ? updated : p)));
 
-  const deleteProperty = async id => {
+  const deleteProperty = async (id) => {
     try {
-      await axios.delete(`http://localhost:8000/api/properties/${id}`);
-      setProperties(prev => prev.filter(p => p.id !== id));
-      toast.success("Property deleted ✔︎");
+      await axios.delete(`/api/properties/${id}`);
+      setProperties(prev => prev.filter(p => (p._id || p.id) !== id));
     } catch (err) {
       console.error("Delete failed:", err);
-      toast.error(
-        err?.response?.data?.message || "Server error while deleting"
-      );
+      alert("Failed to delete property");
     }
   };
+  
 
   /* ───────────  load once  ─────────── */
 

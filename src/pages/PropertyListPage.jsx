@@ -41,30 +41,31 @@ export default function PropertyListPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
-        {filteredProperties.map((property) => (
-          <Link
-            key={property.id}
-            to={`/properties/${property.id}`}
-            className="bg-white rounded-3xl shadow hover:shadow-xl hover:-translate-y-1 transition overflow-hidden border border-rose-100"
-          >
-            <img
-              src={property.images?.[0] || "https://via.placeholder.com/400"}
-              alt={property.title}
-              className="w-full h-52 object-cover rounded-t-3xl"
-            />
-            <div className="p-5">
-              <h2 className="text-xl font-semibold text-slate-800 mb-1">
-                {property.title}
-              </h2>
-              <p className="text-slate-600 text-sm mb-1">
-                Location: {property.location}
-              </p>
-              <p className="text-rose-600 font-bold mt-2 text-lg">
-                ₹ {property.price.toLocaleString()}
-              </p>
-            </div>
-          </Link>
-        ))}
+      {filteredProperties.map((property) => (
+  <Link
+    key={property._id || property.id}
+    to={`/properties/${property._id || property.id}`}
+    className="bg-white rounded-3xl shadow hover:shadow-xl hover:-translate-y-1 transition overflow-hidden border border-rose-100"
+  >
+    <img
+      src={property.images?.[0] || "https://via.placeholder.com/400"}
+      alt={property.title}
+      className="w-full h-52 object-cover rounded-t-3xl"
+    />
+    <div className="p-5">
+      <h2 className="text-xl font-semibold text-slate-800 mb-1">
+        {property.title}
+      </h2>
+      <p className="text-slate-600 text-sm mb-1">
+        Location: {property.location}
+      </p>
+      <p className="text-rose-600 font-bold mt-2 text-lg">
+        ₹ {property.price.toLocaleString()}
+      </p>
+    </div>
+  </Link>
+))}
+
       </div>
     </div>
   );

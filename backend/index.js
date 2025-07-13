@@ -1,4 +1,5 @@
 require("dotenv").config();
+console.log("✅ Loaded ADMIN_CODE:", process.env.ADMIN_CODE);
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
@@ -44,6 +45,24 @@ const upload = multer({ storage });
 app.get("/", (req, res) => {
   res.send("✔️ ROOV backend is running");
 });
+
+// ✅ verify-admin route - Secure Admin Code Check
+app.post("/api/verify-admin", (req, res) => {
+  const { code } = req.body;
+  const ADMIN_CODE = process.env.ADMIN_CODE;
+
+  if (!code) {
+    return res.status(400).json({ error: "No code provided" });
+  }
+
+  if (code === ADMIN_CODE) {
+    return res.status(200).json({ success: true });
+  } else {
+    return res.status(401).json({ error: "Invalid code" });
+  }
+});
+
+
 
 // ✅ Upload Images
 app.post("/api/upload-images", upload.array("images"), (req, res) => {

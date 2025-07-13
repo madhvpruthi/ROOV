@@ -6,23 +6,12 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function AdminPanel() {
-  /* ───────────  auth + mode  ─────────── */
   const [code, setCode] = useState("");
   const [auth, setAuth] = useState(false);
-  const [mode, setMode] = useState("properties"); // 'properties' | 'contacts'
+  const [mode, setMode] = useState("properties");
 
-  /* ──────────  context props  ────────── */
-  const {
-    properties,
-    addProperty,
-    updateProperty,
-    deleteProperty
-  } = useProperty();   // ← removed setProperties
-
-  /* ──────────  contacts state  ────────── */
+  const { properties, addProperty, updateProperty, deleteProperty } = useProperty();
   const [contacts, setContacts] = useState([]);
-
-  /* ──────────  form state  ────────── */
   const [editingProperty, setEditingProperty] = useState(null);
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
@@ -31,23 +20,26 @@ export default function AdminPanel() {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  /* ──────────  auth check  ────────── */
-  const handleAuth = e => {
+  // 🧠 Secure code verification
+  const handleAuth = async (e) => {
     e.preventDefault();
-    code === "1234" ? setAuth(true) : alert("Incorrect code");
+    try {
+      const res = await axios.post("/api/verify-admin", { code }); // Automatically uses relative path
+      if (res.data.success) setAuth(true);
+    } catch (err) {
+      alert("Incorrect code");
+      console.error("Verification error:", err.response?.data || err.message);
+    }
   };
 
-  /* ──────────  load data on auth  ────────── */
   useEffect(() => {
     if (!auth) return;
 
-    axios
-      .get("http://localhost:8000/api/contacts")
+    axios.get("/api/contacts")
       .then(res => setContacts(res.data))
       .catch(console.error);
   }, [auth]);
 
-  /* ──────────  helpers  ────────── */
   const resetForm = () => {
     setTitle("");
     setLocation("");
@@ -71,10 +63,7 @@ export default function AdminPanel() {
       try {
         const fm = new FormData();
         images.forEach(img => fm.append("images", img));
-        const uploadRes = await axios.post(
-          "http://localhost:8000/api/upload-images",
-          fm
-        );
+        const uploadRes = await axios.post("/api/upload-images", fm);
         imageUrls = [...imageUrls, ...uploadRes.data.imageUrls];
       } catch (err) {
         console.error("Image upload failed:", err);
@@ -94,16 +83,10 @@ export default function AdminPanel() {
 
     try {
       if (editingProperty) {
-        await axios.put(
-          `http://localhost:8000/api/properties/${editingProperty.id}`,
-          propData
-        );
+        await axios.put(`/api/properties/${editingProperty._id || editingProperty.id}`, propData);
         updateProperty({ ...editingProperty, ...propData });
       } else {
-        const res = await axios.post(
-          "http://localhost:8000/api/properties",
-          propData
-        );
+        const res = await axios.post("/api/properties", propData);
         addProperty(res.data);
       }
       resetForm();
@@ -126,10 +109,9 @@ export default function AdminPanel() {
   };
 
   const handleDelete = p => {
-    if (window.confirm("Delete?")) deleteProperty(p.id);
+    if (window.confirm("Delete?")) deleteProperty(p._id ||p.id);
   };
 
-  /* ────────────  render  ──────────── */
   if (!auth) {
     return (
       <div className="p-8 mx-auto max-w-md bg-white rounded shadow mt-20">
@@ -153,16 +135,13 @@ export default function AdminPanel() {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <ToastContainer />
-
       <h2 className="text-2xl font-bold">Admin Panel</h2>
 
       <div className="flex gap-4 mb-6">
         {["properties", "contacts"].map(tab => (
           <button
             key={tab}
-            className={`px-4 py-2 rounded ${
-              mode === tab ? "bg-blue-600 text-white" : "bg-gray-200"
-            }`}
+            className={`px-4 py-2 rounded ${mode === tab ? "bg-blue-600 text-white" : "bg-gray-200"}`}
             onClick={() => setMode(tab)}
           >
             {tab === "properties" ? "Manage Properties" : "View Contacts"}
@@ -170,13 +149,9 @@ export default function AdminPanel() {
         ))}
       </div>
 
-      {/* ─────────  PROPERTY MODE  ───────── */}
       {mode === "properties" && (
         <>
-          <form
-            onSubmit={handleSubmit}
-            className="bg-white p-6 rounded shadow space-y-4"
-          >
+          <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow space-y-4">
             {[
               ["title", title, setTitle],
               ["location", location, setLocation],
@@ -192,14 +167,7 @@ export default function AdminPanel() {
                 className="border rounded p-2 w-full"
               />
             ))}
-
-            <input
-              type="file"
-              multiple
-              onChange={handleImageChange}
-              className="border rounded p-2 w-full"
-            />
-
+            <input type="file" multiple onChange={handleImageChange} className="border rounded p-2 w-full" />
             <button
               type="submit"
               disabled={loading}
@@ -207,7 +175,6 @@ export default function AdminPanel() {
             >
               {loading ? "Saving..." : editingProperty ? "Update" : "Add"} Property
             </button>
-
             {editingProperty && (
               <button
                 type="button"
@@ -222,7 +189,7 @@ export default function AdminPanel() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {properties.map(p => (
               <PropertyCard
-                key={p.id}
+                key={p._id}
                 property={p}
                 isAdmin
                 onEdit={() => handleEdit(p)}
@@ -233,7 +200,6 @@ export default function AdminPanel() {
         </>
       )}
 
-      {/* ─────────  CONTACT MODE  ───────── */}
       {mode === "contacts" && (
         <div className="bg-white p-6 rounded shadow">
           <h3 className="text-xl font-semibold mb-4">Contact Messages</h3>
@@ -241,21 +207,19 @@ export default function AdminPanel() {
             <thead>
               <tr className="bg-gray-100">
                 {["Name", "Phone", "Message", "Date"].map(h => (
-                  <th key={h} className="p-2 text-left">
-                    {h}
-                  </th>
+                  <th key={h} className="p-2 text-left">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {contacts.map(c => (
-                <tr key={c.id} className="border-t hover:bg-gray-50">
-                  <td className="p-2">{c.name}</td>
-                  <td>{c.phone}</td>
-                  <td>{c.message}</td>
-                  <td>{new Date(c.createdAt).toLocaleString()}</td>
-                </tr>
-              ))}
+            {contacts.map(c => (
+  <tr key={c._id} className="border-t hover:bg-gray-50">
+    <td className="p-2">{c.name}</td>
+    <td>{c.phone}</td>
+    <td>{c.message}</td>
+    <td>{new Date(c.createdAt).toLocaleString()}</td>
+  </tr>
+))}
             </tbody>
           </table>
         </div>
