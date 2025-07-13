@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs");
 
-const Property = require("./models/Property"); // your schema
+const Property = require("./models/Property"); // MongoDB Schema
 const app = express();
 const PORT = process.env.PORT || 8000;
 
@@ -20,7 +20,6 @@ mongoose
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 
 // ✅ Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, "uploads");
@@ -40,12 +39,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ✅ In-memory storage (can be replaced by DB)
-let properties = [];
-let contacts = [];
-let nextPropertyId = 1;
-let nextContactId = 1;
-
 // ✅ Health Check
 app.get("/", (req, res) => {
   res.send("✔️ ROOV backend is running");
@@ -64,61 +57,68 @@ app.post("/api/upload-images", upload.array("images"), (req, res) => {
   }
 });
 
-// ✅ Get All Properties
-app.get("/api/properties", (req, res) => {
-  res.json(properties);
-});
-
-// ✅ Create Property
-app.post("/api/properties", (req, res) => {
-  const { title, location, price, description, images } = req.body;
-
-  if (!title || !location || price == null) {
-    return res
-      .status(400)
-      .json({ error: "Missing required fields: title, location, price" });
+// ✅ Get All Properties (MongoDB)
+app.get("/api/properties", async (req, res) => {
+  try {
+    const props = await Property.find();
+    res.json(props);
+  } catch (err) {
+    res.status(500).json({ error: "Error fetching properties" });
   }
-
-  const newProperty = {
-    id: nextPropertyId++,
-    title,
-    location,
-    price: Number(price),
-    description: description || "",
-    images: Array.isArray(images) ? images : [],
-  };
-
-  properties.push(newProperty);
-  res.status(201).json(newProperty);
 });
 
-// ✅ Update Property
-app.put("/api/properties/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const index = properties.findIndex((p) => p.id === id);
+// ✅ Create Property (MongoDB)
+app.post("/api/properties", async (req, res) => {
+  try {
+    const { title, location, price, description, images } = req.body;
 
-  if (index === -1) {
-    return res.status(404).json({ error: "Property not found" });
+    if (!title || !location || price == null) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const newProperty = new Property({
+      title,
+      location,
+      price,
+      description: description || "",
+      images: Array.isArray(images) ? images : [],
+    });
+
+    await newProperty.save();
+    res.status(201).json(newProperty);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create property" });
   }
-
-  properties[index] = { ...properties[index], ...req.body };
-  res.json(properties[index]);
 });
 
-// ✅ Delete Property
-app.delete("/api/properties/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const index = properties.findIndex((p) => p.id === id);
-
-  if (index === -1) {
-    return res.status(404).json({ error: "Property not found" });
+// ✅ Update Property (MongoDB)
+app.put("/api/properties/:id", async (req, res) => {
+  try {
+    const updated = await Property.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    if (!updated) return res.status(404).json({ error: "Property not found" });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update property" });
   }
-
-  properties.splice(index, 1);
-  res.json({ message: "Deleted successfully" });
 });
 
-// ✅ Submit Contact Message
+// ✅ Delete Property (MongoDB)
+app.delete("/api/properties/:id", async (req, res) => {
+  try {
+    const deleted = await Property.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: "Property not found" });
+    res.json({ message: "Deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete property" });
+  }
+});
+
+// ✅ Submit Contact Message (still using in-memory storage)
+let contacts = [];
+let nextContactId = 1;
+
 app.post("/api/contact", (req, res) => {
   const { name, phone, message } = req.body;
 
