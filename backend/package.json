@@ -1,4 +1,60 @@
 {
+<<<<<<< HEAD
+  "name": "real-estate-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack real estate website with React frontend and Express backend",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm start\"",
+    "server": "cd backend && nodemon index.js",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "proxy": "http://localhost:8000",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "multer": "^2.0.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.2",
+    "react-scripts": "^5.0.1",
+    "react-toastify": "^11.0.5",
+    "web-vitals": "^2.1.4"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.0",
+    "postcss": "^8.5.4",
+    "tailwindcss": "^3.4.17"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+=======
     "name": "backend",
     "version": "1.0.0",
     "description": "Backend for Real Estate website",
@@ -18,4 +74,5 @@
     "devDependencies": {
         "nodemon": "^3.1.10"
     }
+>>>>>>> ec3dcdb (Initial backend setup for ROOV)
 }

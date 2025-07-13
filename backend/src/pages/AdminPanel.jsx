@@ -1,0 +1,265 @@
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import PropertyCard from "../components/PropertyCard";
+import { useProperty } from "../context/PropertyContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+export default function AdminPanel() {
+  /* ───────────  auth + mode  ─────────── */
+  const [code, setCode] = useState("");
+  const [auth, setAuth] = useState(false);
+  const [mode, setMode] = useState("properties"); // 'properties' | 'contacts'
+
+  /* ──────────  context props  ────────── */
+  const {
+    properties,
+    addProperty,
+    updateProperty,
+    deleteProperty
+  } = useProperty();   // ← removed setProperties
+
+  /* ──────────  contacts state  ────────── */
+  const [contacts, setContacts] = useState([]);
+
+  /* ──────────  form state  ────────── */
+  const [editingProperty, setEditingProperty] = useState(null);
+  const [title, setTitle] = useState("");
+  const [location, setLocation] = useState("");
+  const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  /* ──────────  auth check  ────────── */
+  const handleAuth = e => {
+    e.preventDefault();
+    code === "1234" ? setAuth(true) : alert("Incorrect code");
+  };
+
+  /* ──────────  load data on auth  ────────── */
+  useEffect(() => {
+    if (!auth) return;
+
+    axios
+      .get("http://localhost:8000/api/contacts")
+      .then(res => setContacts(res.data))
+      .catch(console.error);
+  }, [auth]);
+
+  /* ──────────  helpers  ────────── */
+  const resetForm = () => {
+    setTitle("");
+    setLocation("");
+    setPrice("");
+    setDescription("");
+    setImages([]);
+    setEditingProperty(null);
+  };
+
+  const handleImageChange = e => setImages([...e.target.files]);
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    if (!title || !location || !price || !description)
+      return alert("Please fill all fields");
+
+    setLoading(true);
+    let imageUrls = editingProperty?.images || [];
+
+    if (images.length > 0) {
+      try {
+        const fm = new FormData();
+        images.forEach(img => fm.append("images", img));
+        const uploadRes = await axios.post(
+          "http://localhost:8000/api/upload-images",
+          fm
+        );
+        imageUrls = [...imageUrls, ...uploadRes.data.imageUrls];
+      } catch (err) {
+        console.error("Image upload failed:", err);
+        alert("Image upload failed");
+        setLoading(false);
+        return;
+      }
+    }
+
+    const propData = {
+      title,
+      location,
+      price: +price,
+      description,
+      images: imageUrls
+    };
+
+    try {
+      if (editingProperty) {
+        await axios.put(
+          `http://localhost:8000/api/properties/${editingProperty.id}`,
+          propData
+        );
+        updateProperty({ ...editingProperty, ...propData });
+      } else {
+        const res = await axios.post(
+          "http://localhost:8000/api/properties",
+          propData
+        );
+        addProperty(res.data);
+      }
+      resetForm();
+    } catch (err) {
+      console.error("Save failed:", err?.response?.data || err.message);
+      alert("Save failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = p => {
+    setEditingProperty(p);
+    setTitle(p.title);
+    setLocation(p.location);
+    setPrice(p.price);
+    setDescription(p.description);
+    setImages([]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = p => {
+    if (window.confirm("Delete?")) deleteProperty(p.id);
+  };
+
+  /* ────────────  render  ──────────── */
+  if (!auth) {
+    return (
+      <div className="p-8 mx-auto max-w-md bg-white rounded shadow mt-20">
+        <h2 className="text-xl mb-4">Admin Login</h2>
+        <form onSubmit={handleAuth}>
+          <input
+            type="password"
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            placeholder="Enter admin code"
+            className="border w-full p-2 mb-4"
+          />
+          <button className="bg-blue-600 text-white px-4 py-2 rounded">
+            Unlock
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 max-w-5xl mx-auto space-y-6">
+      <ToastContainer />
+
+      <h2 className="text-2xl font-bold">Admin Panel</h2>
+
+      <div className="flex gap-4 mb-6">
+        {["properties", "contacts"].map(tab => (
+          <button
+            key={tab}
+            className={`px-4 py-2 rounded ${
+              mode === tab ? "bg-blue-600 text-white" : "bg-gray-200"
+            }`}
+            onClick={() => setMode(tab)}
+          >
+            {tab === "properties" ? "Manage Properties" : "View Contacts"}
+          </button>
+        ))}
+      </div>
+
+      {/* ─────────  PROPERTY MODE  ───────── */}
+      {mode === "properties" && (
+        <>
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white p-6 rounded shadow space-y-4"
+          >
+            {[
+              ["title", title, setTitle],
+              ["location", location, setLocation],
+              ["price", price, setPrice],
+              ["description", description, setDescription]
+            ].map(([name, val, setter]) => (
+              <input
+                key={name}
+                type={name === "price" ? "number" : "text"}
+                placeholder={name.charAt(0).toUpperCase() + name.slice(1)}
+                value={val}
+                onChange={e => setter(e.target.value)}
+                className="border rounded p-2 w-full"
+              />
+            ))}
+
+            <input
+              type="file"
+              multiple
+              onChange={handleImageChange}
+              className="border rounded p-2 w-full"
+            />
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+              {loading ? "Saving..." : editingProperty ? "Update" : "Add"} Property
+            </button>
+
+            {editingProperty && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="ml-4 bg-gray-400 text-white px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+            )}
+          </form>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {properties.map(p => (
+              <PropertyCard
+                key={p.id}
+                property={p}
+                isAdmin
+                onEdit={() => handleEdit(p)}
+                onDelete={() => handleDelete(p)}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ─────────  CONTACT MODE  ───────── */}
+      {mode === "contacts" && (
+        <div className="bg-white p-6 rounded shadow">
+          <h3 className="text-xl font-semibold mb-4">Contact Messages</h3>
+          <table className="min-w-full rounded overflow-hidden">
+            <thead>
+              <tr className="bg-gray-100">
+                {["Name", "Phone", "Message", "Date"].map(h => (
+                  <th key={h} className="p-2 text-left">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {contacts.map(c => (
+                <tr key={c.id} className="border-t hover:bg-gray-50">
+                  <td className="p-2">{c.name}</td>
+                  <td>{c.phone}</td>
+                  <td>{c.message}</td>
+                  <td>{new Date(c.createdAt).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

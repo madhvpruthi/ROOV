@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* reserve 64 px for the fixed navbar */
+body { padding-top: 64px;
+ }
+ body {
+    @apply bg-gradient-to-br from-white to-gray-800 min-h-screen text-gray-900;
+  }
