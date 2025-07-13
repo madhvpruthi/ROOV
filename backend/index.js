@@ -1,16 +1,26 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
+const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs");
 
+const Property = require("./models/Property"); // your schema
 const app = express();
 const PORT = process.env.PORT || 8000;
+
+// ✅ MongoDB Connection
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
 
 // ✅ Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 // ✅ Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, "uploads");
