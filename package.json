@@ -5,9 +5,9 @@
   "description": "Full-stack real estate website with React frontend and Express backend",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm start\"",
-    "server": "cd backend && nodemon index.js",
-    "start": "react-scripts start",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && npm run dev",
+    "client": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -50,8 +50,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  }
 }
