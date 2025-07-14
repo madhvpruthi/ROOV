@@ -67,15 +67,22 @@ app.post("/api/verify-admin", (req, res) => {
 // ✅ Upload Images
 app.post("/api/upload-images", upload.array("images"), (req, res) => {
   try {
+    const isProd = process.env.NODE_ENV === "production";
+    const baseUrl = isProd
+      ? "https://roov.onrender.com"
+      : `${req.protocol}://${req.get("host")}`;
+
     const imageUrls = req.files.map(
-      (file) => `${req.protocol}://${req.get("host")}/uploads/${file.filename}`
+      (file) => `${baseUrl}/uploads/${file.filename}`
     );
+
     res.status(200).json({ imageUrls });
   } catch (error) {
     console.error("Image upload failed:", error);
     res.status(500).json({ error: "Failed to upload images" });
   }
 });
+
 
 // ✅ Get All Properties
 app.get("/api/properties", async (req, res) => {
