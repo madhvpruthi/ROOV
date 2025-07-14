@@ -5,13 +5,32 @@ const cors = require("cors");
 const multer = require("multer");
 const mongoose = require("mongoose");
 const path = require("path");
-const fs = require("fs");
+
+const { v2: cloudinary } = require("cloudinary");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
 const Property = require("./models/Property");
 const Contact = require("./models/Contact");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+
+// ✅ Cloudinary Config
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// ✅ Multer with Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "roov_properties",
+    allowed_formats: ["jpg", "jpeg", "png"],
+  },
+});
+const upload = multer({ storage });
 
 // ✅ MongoDB Connection
 mongoose
@@ -24,53 +43,27 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
-
-// ✅ Serve static files
-app.use("/uploads", express.static(uploadsDir));
-
-// ✅ Multer setup
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, name);
-  },
-});
-const upload = multer({ storage });
-
 // ✅ Health Check
 app.get("/", (req, res) => {
   res.send("✔️ ROOV backend is running");
 });
 
-// ✅ verify-admin route
+// ✅ Verify Admin
 app.post("/api/verify-admin", (req, res) => {
   const { code } = req.body;
   const ADMIN_CODE = process.env.ADMIN_CODE;
-
   if (!code) return res.status(400).json({ error: "No code provided" });
-
-  if (code === ADMIN_CODE) {
-    return res.status(200).json({ success: true });
-  } else {
-    return res.status(401).json({ error: "Invalid code" });
-  }
+  if (code === ADMIN_CODE) return res.status(200).json({ success: true });
+  return res.status(401).json({ error: "Invalid code" });
 });
 
-// ✅ Upload Images (HTTPS fix)
+// ✅ Upload Images to Cloudinary
 app.post("/api/upload-images", upload.array("images"), (req, res) => {
   try {
-    const baseUrl = "https://roov.onrender.com";
-    const imageUrls = req.files.map(
-      (file) => `${baseUrl}/uploads/${file.filename}`
-    );
+    const imageUrls = req.files.map((file) => file.path);
     res.status(200).json({ imageUrls });
   } catch (error) {
-    console.error("Image upload failed:", error);
+    console.error("❌ Image upload failed:", error);
     res.status(500).json({ error: "Failed to upload images" });
   }
 });
@@ -81,7 +74,7 @@ app.get("/api/properties", async (req, res) => {
     const props = await Property.find();
     res.json(props);
   } catch (err) {
-    console.error("Failed to fetch properties:", err);
+    console.error("❌ Failed to fetch properties:", err);
     res.status(500).json({ error: "Error fetching properties" });
   }
 });
@@ -90,21 +83,15 @@ app.get("/api/properties", async (req, res) => {
 app.post("/api/properties", async (req, res) => {
   try {
     const { title, location, price, description, images } = req.body;
-
-    if (!title || !location || price == null) {
+    if (!title || !location || price == null)
       return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    const fixedImages = (Array.isArray(images) ? images : []).map((url) =>
-      url.replace("http://", "https://")
-    );
 
     const newProperty = new Property({
       title,
       location,
       price,
       description: description || "",
-      images: fixedImages,
+      images: Array.isArray(images) ? images : [],
     });
 
     await newProperty.save();
@@ -138,13 +125,11 @@ app.delete("/api/properties/:id", async (req, res) => {
   }
 });
 
-// ✅ Submit Contact Message
+// ✅ Submit Contact
 app.post("/api/contact", async (req, res) => {
   const { name, phone, message } = req.body;
-
-  if (!name || !phone || !message) {
+  if (!name || !phone || !message)
     return res.status(400).json({ error: "All fields are required" });
-  }
 
   try {
     const newContact = new Contact({ name, phone, message });
@@ -166,31 +151,7 @@ app.get("/api/contacts", async (req, res) => {
   }
 });
 
-// ✅ OPTIONAL: Cleanup Route for Image URLs (run once)
-app.patch("/api/fix-image-links", async (req, res) => {
-  try {
-    const properties = await Property.find();
-    let updatedCount = 0;
-
-    for (const prop of properties) {
-      const updatedImages = prop.images.map((img) =>
-        img.startsWith("http://") ? img.replace("http://", "https://") : img
-      );
-
-      if (JSON.stringify(updatedImages) !== JSON.stringify(prop.images)) {
-        prop.images = updatedImages;
-        await prop.save();
-        updatedCount++;
-      }
-    }
-
-    res.json({ message: `✅ Updated ${updatedCount} properties.` });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fix image links" });
-  }
-});
-
-// ✅ Fallback Route
+// ✅ 404 Fallback
 app.use((req, res) => {
   res.status(404).json({ error: "Not found" });
 });
