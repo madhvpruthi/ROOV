@@ -8,7 +8,8 @@ const path = require("path");
 const fs = require("fs");
 
 const Property = require("./models/Property");
-const Contact = require("./models/Contact"); // ✅ NEW
+const Contact = require("./models/Contact");
+
 const app = express();
 const PORT = process.env.PORT || 8000;
 
@@ -46,14 +47,12 @@ app.get("/", (req, res) => {
   res.send("✔️ ROOV backend is running");
 });
 
-// ✅ verify-admin route - Secure Admin Code Check
+// ✅ verify-admin route
 app.post("/api/verify-admin", (req, res) => {
   const { code } = req.body;
   const ADMIN_CODE = process.env.ADMIN_CODE;
 
-  if (!code) {
-    return res.status(400).json({ error: "No code provided" });
-  }
+  if (!code) return res.status(400).json({ error: "No code provided" });
 
   if (code === ADMIN_CODE) {
     return res.status(200).json({ success: true });
@@ -62,27 +61,19 @@ app.post("/api/verify-admin", (req, res) => {
   }
 });
 
-
-
-// ✅ Upload Images
+// ✅ Upload Images (HTTPS fix)
 app.post("/api/upload-images", upload.array("images"), (req, res) => {
   try {
-    const isProd = process.env.NODE_ENV === "production";
-    const baseUrl = isProd
-      ? "https://roov.onrender.com"
-      : `${req.protocol}://${req.get("host")}`;
-
+    const baseUrl = "https://roov.onrender.com";
     const imageUrls = req.files.map(
       (file) => `${baseUrl}/uploads/${file.filename}`
     );
-
     res.status(200).json({ imageUrls });
   } catch (error) {
     console.error("Image upload failed:", error);
     res.status(500).json({ error: "Failed to upload images" });
   }
 });
-
 
 // ✅ Get All Properties
 app.get("/api/properties", async (req, res) => {
@@ -93,7 +84,6 @@ app.get("/api/properties", async (req, res) => {
     console.error("Failed to fetch properties:", err);
     res.status(500).json({ error: "Error fetching properties" });
   }
-  
 });
 
 // ✅ Create Property
@@ -105,12 +95,16 @@ app.post("/api/properties", async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+    const fixedImages = (Array.isArray(images) ? images : []).map((url) =>
+      url.replace("http://", "https://")
+    );
+
     const newProperty = new Property({
       title,
       location,
       price,
       description: description || "",
-      images: Array.isArray(images) ? images : [],
+      images: fixedImages,
     });
 
     await newProperty.save();
@@ -144,7 +138,7 @@ app.delete("/api/properties/:id", async (req, res) => {
   }
 });
 
-// ✅ Submit Contact Message (MongoDB)
+// ✅ Submit Contact Message
 app.post("/api/contact", async (req, res) => {
   const { name, phone, message } = req.body;
 
@@ -169,6 +163,30 @@ app.get("/api/contacts", async (req, res) => {
     res.json(allContacts);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch contacts" });
+  }
+});
+
+// ✅ OPTIONAL: Cleanup Route for Image URLs (run once)
+app.patch("/api/fix-image-links", async (req, res) => {
+  try {
+    const properties = await Property.find();
+    let updatedCount = 0;
+
+    for (const prop of properties) {
+      const updatedImages = prop.images.map((img) =>
+        img.startsWith("http://") ? img.replace("http://", "https://") : img
+      );
+
+      if (JSON.stringify(updatedImages) !== JSON.stringify(prop.images)) {
+        prop.images = updatedImages;
+        await prop.save();
+        updatedCount++;
+      }
+    }
+
+    res.json({ message: `✅ Updated ${updatedCount} properties.` });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fix image links" });
   }
 });
 
