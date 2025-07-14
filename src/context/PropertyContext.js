@@ -7,11 +7,11 @@ const PropertyContext = createContext();
 export const PropertyProvider = ({ children }) => {
   const [properties, setProperties] = useState([]);
 
-  /* ─────────────  helpers  ───────────── */
+  const baseURL = "https://roov.onrender.com"; // 👈 Use this base URL directly
 
   const fetchProperties = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/properties");
+      const res = await axios.get(`${baseURL}/api/properties`);
       setProperties(res.data);
     } catch (err) {
       console.error("Failed to load properties:", err);
@@ -19,23 +19,37 @@ export const PropertyProvider = ({ children }) => {
     }
   };
 
-  const addProperty = prop => setProperties(prev => [...prev, prop]);
+  const addProperty = async (prop) => {
+    try {
+      const res = await axios.post(`${baseURL}/api/properties`, prop);
+      setProperties(prev => [...prev, res.data]);
+    } catch (err) {
+      console.error("Add failed:", err);
+      toast.error("Failed to add property");
+    }
+  };
 
-  const updateProperty = updated =>
-    setProperties(prev => prev.map(p => (p.id === updated.id ? updated : p)));
+  const updateProperty = async (updated) => {
+    try {
+      const res = await axios.put(`${baseURL}/api/properties/${updated._id || updated.id}`, updated);
+      setProperties(prev =>
+        prev.map(p => (p._id === updated._id || p.id === updated.id ? res.data : p))
+      );
+    } catch (err) {
+      console.error("Update failed:", err);
+      toast.error("Failed to update property");
+    }
+  };
 
   const deleteProperty = async (id) => {
     try {
-      await axios.delete(`/api/properties/${id}`);
+      await axios.delete(`${baseURL}/api/properties/${id}`);
       setProperties(prev => prev.filter(p => (p._id || p.id) !== id));
     } catch (err) {
       console.error("Delete failed:", err);
       alert("Failed to delete property");
     }
   };
-  
-
-  /* ───────────  load once  ─────────── */
 
   useEffect(() => {
     fetchProperties();

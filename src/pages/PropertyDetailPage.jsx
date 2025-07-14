@@ -1,13 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useProperty } from "../context/PropertyContext";
+import axios from "axios";
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { properties } = useProperty();
-  const property = properties.find((p) => p.id.toString() === id);
+  const [property, setProperty] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const BASE_URL = "https://roov.onrender.com";
+
+  useEffect(() => {
+    axios
+      .get(`${BASE_URL}/api/properties/${id}`)
+      .then(res => {
+        setProperty(res.data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Property fetch error:", err);
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <p className="text-slate-700">Loading property details...</p>
+      </div>
+    );
+  }
 
   if (!property) {
     return (
@@ -28,7 +51,7 @@ export default function PropertyDetailPage() {
         </h1>
         <div className="text-lg space-y-2 mb-6 text-slate-700">
           <p><strong className="text-slate-900">Location:</strong> {property.location}</p>
-          <p><strong className="text-slate-900">Price:</strong> ₹ {property.price.toLocaleString()}</p>
+          <p><strong className="text-slate-900">Price:</strong> ₹ {property.price?.toLocaleString()}</p>
         </div>
         <p className="text-slate-600 mb-6 leading-relaxed whitespace-pre-wrap border-t pt-4">
           {property.description}
@@ -38,7 +61,7 @@ export default function PropertyDetailPage() {
             <img
               key={index}
               src={img}
-              alt={property.title}
+              alt={`${property.title}-${index}`}
               className="rounded-xl cursor-pointer hover:scale-105 transition-transform duration-200 shadow"
               onClick={() => setSelectedImage(img)}
             />

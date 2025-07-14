@@ -1,11 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useProperty } from "../context/PropertyContext";
+import axios from "axios";
 
 export default function PropertyListPage() {
-  const { properties } = useProperty();
+  const [properties, setProperties] = useState([]);
   const [search, setSearch] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const BASE_URL = "https://roov.onrender.com";
+
+  useEffect(() => {
+    axios.get(`${BASE_URL}/api/properties`)
+      .then(res => setProperties(res.data))
+      .catch(err => {
+        console.error("Failed to fetch properties:", err);
+        alert("Could not load properties.");
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   const filteredProperties = properties.filter((property) => {
     const matchesSearch = property.title
@@ -16,6 +29,14 @@ export default function PropertyListPage() {
       : true;
     return matchesSearch && matchesLocation;
   });
+
+  if (loading) {
+    return (
+      <div className="p-6 text-center text-slate-700">
+        Loading properties...
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto font-inter text-slate-900">
@@ -41,31 +62,34 @@ export default function PropertyListPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
-      {filteredProperties.map((property) => (
-  <Link
-    key={property._id || property.id}
-    to={`/properties/${property._id || property.id}`}
-    className="bg-white rounded-3xl shadow hover:shadow-xl hover:-translate-y-1 transition overflow-hidden border border-rose-100"
-  >
-    <img
-      src={property.images?.[0] || "https://via.placeholder.com/400"}
-      alt={property.title}
-      className="w-full h-52 object-cover rounded-t-3xl"
-    />
-    <div className="p-5">
-      <h2 className="text-xl font-semibold text-slate-800 mb-1">
-        {property.title}
-      </h2>
-      <p className="text-slate-600 text-sm mb-1">
-        Location: {property.location}
-      </p>
-      <p className="text-rose-600 font-bold mt-2 text-lg">
-        ₹ {property.price.toLocaleString()}
-      </p>
-    </div>
-  </Link>
-))}
-
+        {filteredProperties.length === 0 ? (
+          <p className="text-slate-600 col-span-full text-center">No properties match your criteria.</p>
+        ) : (
+          filteredProperties.map((property) => (
+            <Link
+              key={property._id || property.id}
+              to={`/properties/${property._id || property.id}`}
+              className="bg-white rounded-3xl shadow hover:shadow-xl hover:-translate-y-1 transition overflow-hidden border border-rose-100"
+            >
+              <img
+                src={property.images?.[0] || "https://via.placeholder.com/400"}
+                alt={property.title}
+                className="w-full h-52 object-cover rounded-t-3xl"
+              />
+              <div className="p-5">
+                <h2 className="text-xl font-semibold text-slate-800 mb-1">
+                  {property.title}
+                </h2>
+                <p className="text-slate-600 text-sm mb-1">
+                  Location: {property.location}
+                </p>
+                <p className="text-rose-600 font-bold mt-2 text-lg">
+                  ₹ {property.price.toLocaleString()}
+                </p>
+              </div>
+            </Link>
+          ))
+        )}
       </div>
     </div>
   );

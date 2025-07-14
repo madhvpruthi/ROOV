@@ -85,6 +85,7 @@ app.get("/api/properties", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Error fetching properties" });
   }
+  console.error("Failed to fetch properties:", err);
 });
 
 // ✅ Create Property

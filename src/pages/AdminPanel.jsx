@@ -5,6 +5,8 @@ import { useProperty } from "../context/PropertyContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const BASE_URL = "https://roov.onrender.com";
+
 export default function AdminPanel() {
   const [code, setCode] = useState("");
   const [auth, setAuth] = useState(false);
@@ -20,11 +22,10 @@ export default function AdminPanel() {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 🧠 Secure code verification
   const handleAuth = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("/api/verify-admin", { code }); // Automatically uses relative path
+      const res = await axios.post(`${BASE_URL}/api/verify-admin`, { code });
       if (res.data.success) setAuth(true);
     } catch (err) {
       alert("Incorrect code");
@@ -35,7 +36,7 @@ export default function AdminPanel() {
   useEffect(() => {
     if (!auth) return;
 
-    axios.get("/api/contacts")
+    axios.get(`${BASE_URL}/api/contacts`)
       .then(res => setContacts(res.data))
       .catch(console.error);
   }, [auth]);
@@ -63,7 +64,7 @@ export default function AdminPanel() {
       try {
         const fm = new FormData();
         images.forEach(img => fm.append("images", img));
-        const uploadRes = await axios.post("/api/upload-images", fm);
+        const uploadRes = await axios.post(`${BASE_URL}/api/upload-images`, fm);
         imageUrls = [...imageUrls, ...uploadRes.data.imageUrls];
       } catch (err) {
         console.error("Image upload failed:", err);
@@ -83,10 +84,10 @@ export default function AdminPanel() {
 
     try {
       if (editingProperty) {
-        await axios.put(`/api/properties/${editingProperty._id || editingProperty.id}`, propData);
+        await axios.put(`${BASE_URL}/api/properties/${editingProperty._id || editingProperty.id}`, propData);
         updateProperty({ ...editingProperty, ...propData });
       } else {
-        const res = await axios.post("/api/properties", propData);
+        const res = await axios.post(`${BASE_URL}/api/properties`, propData);
         addProperty(res.data);
       }
       resetForm();
@@ -109,7 +110,7 @@ export default function AdminPanel() {
   };
 
   const handleDelete = p => {
-    if (window.confirm("Delete?")) deleteProperty(p._id ||p.id);
+    if (window.confirm("Delete?")) deleteProperty(p._id || p.id);
   };
 
   if (!auth) {
@@ -212,14 +213,14 @@ export default function AdminPanel() {
               </tr>
             </thead>
             <tbody>
-            {contacts.map(c => (
-  <tr key={c._id} className="border-t hover:bg-gray-50">
-    <td className="p-2">{c.name}</td>
-    <td>{c.phone}</td>
-    <td>{c.message}</td>
-    <td>{new Date(c.createdAt).toLocaleString()}</td>
-  </tr>
-))}
+              {contacts.map(c => (
+                <tr key={c._id} className="border-t hover:bg-gray-50">
+                  <td className="p-2">{c.name}</td>
+                  <td>{c.phone}</td>
+                  <td>{c.message}</td>
+                  <td>{new Date(c.createdAt).toLocaleString()}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

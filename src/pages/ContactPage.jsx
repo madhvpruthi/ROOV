@@ -6,6 +6,8 @@ export default function ContactPage() {
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState("");
 
+  const BASE_URL = "https://roov.onrender.com";
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
@@ -20,7 +22,7 @@ export default function ContactPage() {
     }
     try {
       setSending(true);
-      const res = await axios.post("http://localhost:8000/api/contact", form);
+      const res = await axios.post(`${BASE_URL}/api/contact`, form);
       if (res.status === 201) {
         setStatus("Thank you! Message received.");
         setForm({ name: "", phone: "", message: "" });

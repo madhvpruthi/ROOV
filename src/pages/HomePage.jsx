@@ -4,10 +4,11 @@ import { Link } from "react-router-dom";
 
 export default function HomePage() {
   const [featured, setFeatured] = useState([]);
+  const BASE_URL = "https://roov.onrender.com";
 
   useEffect(() => {
     axios
-      .get("http://localhost:8000/api/properties")
+      .get(`${BASE_URL}/api/properties`)
       .then((res) => setFeatured(res.data.slice(0, 4)))
       .catch(console.error);
   }, []);

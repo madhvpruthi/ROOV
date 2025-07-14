@@ -14,8 +14,8 @@ export default function Navbar() {
     <header className="fixed inset-x-0 top-0 z-40 bg-pink-50/70 backdrop-blur-md border-b border-pink-200 shadow-md">
       <nav className="max-w-7xl mx-auto px-6 py-3">
       <ul className="flex justify-evenly items-center">
-  {nav.map(({ to, label, brand }) => (
-    <li key={`${to}-${label}`}>
+  {nav.map(({ to, label, brand }, idx) => (
+    <li key={`${to}-${label}-${idx}`}>
       <NavLink
         to={to}
         className={({ isActive }) =>
@@ -35,6 +35,7 @@ export default function Navbar() {
     </li>
   ))}
 </ul>
+
       </nav>
     </header>
   );
