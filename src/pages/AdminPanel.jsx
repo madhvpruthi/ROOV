@@ -78,7 +78,7 @@ export default function AdminPanel() {
     const propData = {
       title,
       location,
-      price, // 💡 Now allowing string input like "50 lakhs"
+      price,
       description,
       images: imageUrls
     };
