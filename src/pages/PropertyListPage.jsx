@@ -62,7 +62,7 @@ const PropertyListPage = () => {
         />
 
         <select
-          className="border rounded-xl px-3 py-2"
+          className="border rounded-xl px-2 py-3"
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
         >
