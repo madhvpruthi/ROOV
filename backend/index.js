@@ -9,7 +9,7 @@ const path = require("path");
 const { v2: cloudinary } = require("cloudinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
-const Property = require("./models/Property");
+const Property = require("./models/property");
 const Contact = require("./models/Contact");
 
 const app = express();
@@ -76,6 +76,18 @@ app.get("/api/properties", async (req, res) => {
   } catch (err) {
     console.error("❌ Failed to fetch properties:", err);
     res.status(500).json({ error: "Error fetching properties" });
+  }
+});
+
+// ✅ Get Property by ID
+app.get("/api/properties/:id", async (req, res) => {
+  try {
+    const property = await Property.findById(req.params.id);
+    if (!property) return res.status(404).json({ error: "Property not found" });
+    res.json(property);
+  } catch (err) {
+    console.error("❌ Failed to fetch property:", err);
+    res.status(500).json({ error: "Error fetching property" });
   }
 });
 
