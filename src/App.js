@@ -7,6 +7,7 @@ import PropertyDetails from "./pages/PropertyDetailPage";
 import AdminPanel from "./pages/AdminPanel";
 import ContactPage from "./pages/ContactPage";
 import Navbar from "./components/Navbar";
+import PropertyDetailPage from "./pages/PropertyDetailPage";
 
 export default function App() {
   return (
@@ -17,7 +18,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/properties" element={<PropertyListPage />} />
-            <Route path="/properties/:id" element={<PropertyDetails />} />
+            <Route path="/properties/:id" element={<PropertyDetailPage />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/contact" element={<ContactPage />} />
           </Routes>
