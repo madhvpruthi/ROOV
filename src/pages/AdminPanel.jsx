@@ -1,3 +1,5 @@
+// ✅ UPDATED AdminPanel.jsx
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import PropertyCard from "../components/PropertyCard";
@@ -35,7 +37,6 @@ export default function AdminPanel() {
 
   useEffect(() => {
     if (!auth) return;
-
     axios.get(`${BASE_URL}/api/contacts`)
       .then(res => setContacts(res.data))
       .catch(console.error);
@@ -77,7 +78,7 @@ export default function AdminPanel() {
     const propData = {
       title,
       location,
-      price: +price,
+      price, // 💡 Now allowing string input like "50 lakhs"
       description,
       images: imageUrls
     };
@@ -139,13 +140,16 @@ export default function AdminPanel() {
       <h2 className="text-2xl font-bold">Admin Panel</h2>
 
       <div className="flex gap-4 mb-6">
-        {["properties", "contacts"].map(tab => (
+        {[
+          ["properties", "Manage Properties"],
+          ["contacts", "View Contacts"]
+        ].map(([key, label]) => (
           <button
-            key={tab}
-            className={`px-4 py-2 rounded ${mode === tab ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-            onClick={() => setMode(tab)}
+            key={key}
+            className={`px-4 py-2 rounded ${mode === key ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+            onClick={() => setMode(key)}
           >
-            {tab === "properties" ? "Manage Properties" : "View Contacts"}
+            {label}
           </button>
         ))}
       </div>
@@ -154,15 +158,15 @@ export default function AdminPanel() {
         <>
           <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow space-y-4">
             {[
-              ["title", title, setTitle],
-              ["location", location, setLocation],
-              ["price", price, setPrice],
-              ["description", description, setDescription]
-            ].map(([name, val, setter]) => (
+              ["Title", title, setTitle],
+              ["Location", location, setLocation],
+              ["Price (e.g. 50 lakhs)", price, setPrice],
+              ["Description", description, setDescription]
+            ].map(([ph, val, setter], i) => (
               <input
-                key={name}
-                type={name === "price" ? "number" : "text"}
-                placeholder={name.charAt(0).toUpperCase() + name.slice(1)}
+                key={i}
+                type="text"
+                placeholder={ph}
                 value={val}
                 onChange={e => setter(e.target.value)}
                 className="border rounded p-2 w-full"
@@ -188,7 +192,7 @@ export default function AdminPanel() {
           </form>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {properties.map(p => (
+            {[...new Map(properties.map(p => [p._id, p])).values()].map(p => (
               <PropertyCard
                 key={p._id}
                 property={p}
