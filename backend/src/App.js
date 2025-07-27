@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import PropertyListPage from "./pages/PropertyListPage";
 import { PropertyProvider } from "./context/PropertyContext";
-import PropertyDetails from "./pages/PropertyDetailPage";
 import AdminPanel from "./pages/AdminPanel";
 import ContactPage from "./pages/ContactPage";
 import Navbar from "./components/Navbar";
