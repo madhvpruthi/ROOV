@@ -88,9 +88,8 @@ export default function AdminPanel() {
         await axios.put(`${BASE_URL}/api/properties/${editingProperty._id || editingProperty.id}`, propData);
         updateProperty({ ...editingProperty, ...propData });
       } else {
-        const res = await axios.post(`${BASE_URL}/api/properties`, propData);
-        addProperty(res.data);
-      }
+        await addProperty(propData); 
+      }      
       resetForm();
     } catch (err) {
       console.error("Save failed:", err?.response?.data || err.message);
